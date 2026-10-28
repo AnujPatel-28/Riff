@@ -6,6 +6,13 @@
 <title>Riff Studio</title>
 <meta name="description" content="See something you like, say why, and keep it with its real design values in a GitHub repo your coding agents can read.">
 <link rel="icon" type="image/png" href="/icon-32.png">
+<script>
+  // Apply a saved theme before first paint, so a light choice never flashes dark.
+  try {
+    var t = JSON.parse(localStorage.getItem("riff-studio-theme"));
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
 </head>
 <body>
 <div id="root"></div>
