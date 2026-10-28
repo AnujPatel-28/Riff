@@ -17,6 +17,15 @@ const VIEWS = [
   { id: "extension", label: "Get the extension" },
 ];
 const SESSION_KEY = "riff-studio-ideas";
+const IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+const MOD = IS_MAC ? "Meta" : "Control";
+const MOD_LABEL = IS_MAC ? "⌘" : "Ctrl";
+const THEME_KEY = "riff-studio-theme";
+const THEMES = [
+  { id: "system", label: "Auto" },
+  { id: "light", label: "Light" },
+  { id: "dark", label: "Dark" },
+];
 const FIRST_KEY = "riff-studio-first-idea";
 const GITHUB_KEY = "riff-studio-github";
 
@@ -46,6 +55,12 @@ export default function App() {
 
   const [github, setGithub] = useState(() => load(GITHUB_KEY, null));
   const [githubOpen, setGithubOpen] = useState(false);
+  const [theme, setTheme] = useState(() => load(THEME_KEY, "system"));
+  useEffect(() => {
+    if (theme === "system") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = theme;
+    persist(THEME_KEY, theme);
+  }, [theme]);
 
   return (
     <div className="app">
@@ -56,6 +71,13 @@ export default function App() {
           <span className="pill-note">Built voice-first with Wispr Flow</span>
         </div>
         <SlidingTabs tabs={VIEWS} value={view} onChange={goTo} label="Sections" />
+        <div className="theme-switch" role="group" aria-label="Theme">
+          {THEMES.map((t) => (
+            <button key={t.id} type="button" aria-pressed={theme === t.id} onClick={() => setTheme(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
         <button className="btn outlined small" type="button" onClick={() => setGithubOpen(true)}>
           {github ? `GitHub: ${github.repo}` : "Connect GitHub"}
         </button>
@@ -147,6 +169,20 @@ function Studio({ github, onConnect }) {
 
   const stats = voiceStats(form.note);
 
+  // Ctrl/⌘+Enter saves from anywhere while the tray is open, not only from the note box.
+  const saveRef = useRef(null);
+  useEffect(() => {
+    if (mode !== "describing") return undefined;
+    const onKey = (event) => {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        saveRef.current?.();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mode]);
+
   const save = async () => {
     if (!form.note.trim()) {
       setError("Say or type why you like it first. That's the part your agent needs most.");
@@ -180,6 +216,8 @@ function Studio({ github, onConnect }) {
       if (!reduce) confetti({ particleCount: 110, spread: 75, origin: { y: 0.75 }, colors: ["#ff4f8b", "#f2a65a", "#ffd2e1", "#ffffff", "#1b1030"] });
     }
   };
+
+  saveRef.current = save;
 
   return (
     <LayoutGroup>
@@ -281,12 +319,6 @@ function Studio({ github, onConnect }) {
               setForm({ ...form, note: e.target.value });
               setError("");
             }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                e.preventDefault();
-                save();
-              }
-            }}
           />
           <p className="stats" id="note-stats" aria-live="polite">
             {stats.words === 0
@@ -316,15 +348,13 @@ function Studio({ github, onConnect }) {
             </p>
           )}
           <div className="actions">
-            <button className="btn primary" type="button" onClick={save} disabled={!capture || saving}>
+            <button className="btn primary" type="button" onClick={save} disabled={!capture || saving} aria-keyshortcuts={`${MOD}+Enter`}>
               <MorphText text={saving ? "Saving…" : "Save idea"} />
+              <span className="shortcut" aria-hidden="true">{MOD_LABEL} ↵</span>
             </button>
             <button className="btn text" type="button" onClick={() => setMode("picking")}>
               Pick again
             </button>
-            <span className="tip">
-              <span className="kbd">Ctrl</span> + <span className="kbd">Enter</span>
-            </span>
           </div>
         </div>
       </Tray>

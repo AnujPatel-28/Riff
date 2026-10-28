@@ -16,10 +16,10 @@
   const STYLE = `
     :host {
       all: initial;
-      --primary: #ffb0c8; --on-primary: #5e1133; --primary-container: #7b2949; --on-primary-container: #ffd9e4;
-      --surface: #151214; --surface-container: #221e20; --surface-container-high: #2c282a;
-      --on-surface: #ece4e8; --on-surface-variant: #d0c3ca; --outline: #998d94; --outline-variant: #4e444b;
-      --error: #ffb4ab; --success: #7dd8a6;
+      --primary: #ff4f8b; --on-primary: #1a0710; --primary-container: #4a1530; --on-primary-container: #ffd9e4;
+      --surface: #0f0f12; --surface-container: #1d1d22; --surface-container-high: #28282e;
+      --on-surface: #ededf2; --on-surface-variant: #a8a8b4; --outline: #76767f; --outline-variant: #33333a;
+      --error: #ff8a80; --success: #6fd4a0;
       --ease-standard: cubic-bezier(0.2, 0, 0, 1);
     }
     * { box-sizing: border-box; }
@@ -69,7 +69,7 @@
       button, a.btn { transition: scale 150ms var(--ease-standard); }
     }
     .label { display: inline-block; }
-    .tip { margin-inline-start: auto; color: var(--on-surface-variant); font-size: 12px; }
+    .shortcut { margin-inline-start: 8px; padding-inline-start: 8px; border-inline-start: 1px solid color-mix(in srgb, currentColor 35%, transparent); font-weight: 500; font-size: 12px; opacity: 0.85; }
     kbd { font: 600 11px ui-monospace, monospace; padding: 0 4px; border-radius: 4px; background: var(--surface-container-high); }
     .error { margin: 8px 0 0; color: var(--error); font-weight: 600; font-size: 13px; }
     .error:empty { display: none; }
@@ -234,7 +234,13 @@
     const tags = el("input", { id: "tags", autocomplete: "off", placeholder: "button, hover" });
     tags.value = kind;
     const error = el("p", { class: "error", role: "status" });
-    const save = el("button", { class: "primary", type: "submit" }, el("span", { class: "label" }, "Save to inspiration"));
+    const mac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    const save = el(
+      "button",
+      { class: "primary", type: "submit", "aria-keyshortcuts": mac ? "Meta+Enter" : "Control+Enter" },
+      el("span", { class: "label" }, "Save to inspiration"),
+      el("span", { class: "shortcut", "aria-hidden": "true" }, mac ? "⌘ ↵" : "Ctrl ↵"),
+    );
 
     // One question up front; what will be saved stays visible in one line.
     const summaryLine = el("span", {});
@@ -272,7 +278,6 @@
         { class: "actions" },
         save,
         el("button", { class: "text", type: "button", onclick: () => { close(); globalThis.RiffPicker.start(); } }, "Pick again"),
-        el("span", { class: "tip" }, el("kbd", {}, "Ctrl"), " + ", el("kbd", {}, "Enter")),
       ),
     );
 
@@ -310,12 +315,13 @@
       event.preventDefault();
       submit();
     });
-    form.addEventListener("keydown", (event) => {
-      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+    // Ctrl/⌘+Enter saves from anywhere in the card, not only from the note box.
+    const onShortcut = (event) => {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey) && !save.disabled) {
         event.preventDefault();
         submit();
       }
-    });
+    };
     note.addEventListener("input", () => (error.textContent = ""));
 
     const img = el("img", { alt: `The ${kind} you picked on ${site}`, src: `data:image/png;base64,${picked.shot.base64}` });
@@ -325,7 +331,10 @@
     const shotBox = el("div", { class: "shot", style: `background:${data.tokens.backdrop || "#ffffff"}` }, img);
     const card = el(
       "section",
-      { class: "card", role: "dialog", "aria-label": "Save to Riff", onkeydown: (event) => event.key === "Escape" && close() },
+      {
+        class: "card", role: "dialog", "aria-label": "Save to Riff",
+        onkeydown: (event) => (event.key === "Escape" ? close() : onShortcut(event)),
+      },
       header(shadow, "Save to Riff"),
       shotBox,
       el("p", { class: "meta" }, `${data.element.selector} · ${size} · ${site}${picked.shot.partial ? " · only the visible part is in the screenshot" : ""}`),

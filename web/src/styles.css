@@ -4,25 +4,28 @@
   one type scale, sentence case everywhere.
 */
 :root {
-  /* color roles */
-  --primary: #c2185b;
-  --on-primary: #ffffff;
-  --primary-container: #ffd9e4;
-  --on-primary-container: #3e0021;
-  --surface: #fcf8fa;
-  --surface-container-low: #f7f2f5;
-  --surface-container: #f1ecef;
-  --surface-container-high: #ebe6e9;
-  --on-surface: #1d1a1c;
-  --on-surface-variant: #534b51;
-  --outline: #857b82;
-  --outline-variant: #d6cdd3;
-  --error: #b3261e;
-  --success: #146c43;
+  /* color roles: light-dark(light, dark). The theme switch only changes color-scheme. */
+  color-scheme: light dark;
+  --primary: light-dark(#c2185b, #ff4f8b);
+  --on-primary: light-dark(#ffffff, #1a0710);
+  --primary-container: light-dark(#ffd9e4, #4a1530);
+  --on-primary-container: light-dark(#3e0021, #ffd9e4);
+  --surface: light-dark(#fcf8fa, #0f0f12);
+  --surface-container-low: light-dark(#f7f2f5, #17171b);
+  --surface-container: light-dark(#f1ecef, #1d1d22);
+  --surface-container-high: light-dark(#ebe6e9, #28282e);
+  --on-surface: light-dark(#1d1a1c, #ededf2);
+  --on-surface-variant: light-dark(#534b51, #a8a8b4);
+  --outline: light-dark(#857b82, #76767f);
+  --outline-variant: light-dark(#d6cdd3, #33333a);
+  --error: light-dark(#b3261e, #ff8a80);
+  --success: light-dark(#146c43, #6fd4a0);
   --inverse-surface: #211b2c;
-  --focus: #c2185b;
-  --scrim-shadow: 0 -2px 6px rgb(29 26 28 / 0.06), 0 -12px 32px rgb(29 26 28 / 0.12);
-  --card-shadow: 0 1px 2px rgb(29 26 28 / 0.06), 0 2px 8px rgb(29 26 28 / 0.06);
+  --focus: var(--primary);
+  --shadow-color: light-dark(rgb(29 26 28 / 0.07), rgb(0 0 0 / 0));
+  --tray-shadow-color: light-dark(rgb(29 26 28 / 0.14), rgb(0 0 0 / 0.55));
+  --scrim-shadow: 0 -2px 6px var(--shadow-color), 0 -12px 32px var(--tray-shadow-color);
+  --card-shadow: 0 1px 2px var(--shadow-color), 0 2px 8px var(--shadow-color);
 
   /* spacing: 4/8 grid */
   --s1: 0.25rem; --s2: 0.5rem; --s3: 0.75rem; --s4: 1rem; --s6: 1.5rem; --s8: 2rem; --s12: 3rem;
@@ -43,30 +46,9 @@
 
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --primary: #ffb0c8;
-    --on-primary: #5e1133;
-    --primary-container: #7b2949;
-    --on-primary-container: #ffd9e4;
-    --surface: #151214;
-    --surface-container-low: #1d1a1c;
-    --surface-container: #221e20;
-    --surface-container-high: #2c282a;
-    --on-surface: #e8e0e4;
-    --on-surface-variant: #d0c3ca;
-    --outline: #998d94;
-    --outline-variant: #4e444b;
-    --error: #ffb4ab;
-    --success: #7dd8a6;
-    --focus: #ffb0c8;
-    --scrim-shadow: 0 -12px 32px rgb(0 0 0 / 0.5);
-    --card-shadow: none;
-    color-scheme: dark;
-  }
-}
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 
 * { box-sizing: border-box; }
 html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
@@ -125,6 +107,11 @@ code, .kbd { font: 0.8125em var(--mono); }
   .btn, .chip-btn, .idea-card { transition: scale 150ms var(--ease-standard); }
   .btn:not(:disabled):active, .chip-btn:active, .idea-card:active { scale: 0.97; }
 }
+.shortcut { margin-inline-start: var(--s1); padding-inline-start: var(--s2); border-inline-start: 1px solid color-mix(in srgb, currentColor 35%, transparent); font: 500 var(--text-caption) var(--sans); opacity: 0.85; }
+.theme-switch { display: inline-flex; padding: 2px; border-radius: var(--corner-full); background: var(--surface-container); }
+.theme-switch button { position: relative; min-height: 2.25rem; padding: 0 var(--s3); border: 0; border-radius: var(--corner-full); background: transparent; color: var(--on-surface-variant); font: 500 var(--text-caption) var(--sans); cursor: pointer; }
+.theme-switch button::before { content: ""; position: absolute; inset: -4px 0; }
+.theme-switch button[aria-pressed="true"] { background: var(--surface); color: var(--on-surface); box-shadow: var(--card-shadow); }
 .morph { display: inline-grid; overflow: hidden; }
 .morph-label { grid-area: 1 / 1; white-space: nowrap; }
 
