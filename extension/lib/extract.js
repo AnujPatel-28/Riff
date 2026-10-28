@@ -376,7 +376,7 @@ ${tree.outerHTML}
     };
   }
 
-  /** Everything the side panel needs from the picked element. */
+  /** Everything the card and the background worker need from the picked element. */
   function capture(el) {
     const { nodes, truncated } = walk(el, MAX_NODES);
     const tokens = tokensOf(nodes, el);
