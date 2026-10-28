@@ -15,7 +15,7 @@ function whyOf(readme) {
 }
 
 /** Any public inspiration repo, read straight from GitHub: no token, no server. */
-export function Library({ defaultRepo }) {
+export function Library({ defaultRepo, onGetExtension }) {
   const initial = new URLSearchParams(location.search).get("repo") || defaultRepo || DEFAULT_REPO;
   const [repoInput, setRepoInput] = useState(initial);
   const [repo, setRepo] = useState(initial);
@@ -66,20 +66,32 @@ export function Library({ defaultRepo }) {
         <form className="repo-form" onSubmit={submit}>
           <label className="visually-hidden" htmlFor="library-repo">Public inspiration repo</label>
           <input id="library-repo" value={repoInput} onChange={(e) => setRepoInput(e.target.value)} spellCheck="false" autoComplete="off" />
-          <button className="btn ghost" type="submit">Open</button>
+          <button className="btn outlined" type="submit">Open</button>
         </form>
       </section>
 
-      {state.status === "loading" && <p className="empty">Loading {repo}…</p>}
+      {state.status === "loading" && (
+        <div className="empty" role="status">
+          <p>Loading {repo}…</p>
+        </div>
+      )}
       {state.status === "missing" && (
         <div className="empty">
+          <span className="empty-icon" aria-hidden="true">✦</span>
+          <p className="empty-title">No public library here yet</p>
           <p>
-            No public library at <b>{repo}</b> yet. Capture an idea with the extension, or make the repo public so it can be shown here.
+            <b>{repo}</b> has no ideas Riff can show. Capture your first idea with the extension, or make the repo public.
           </p>
+          <button className="btn primary" type="button" onClick={onGetExtension}>Get the extension</button>
         </div>
       )}
       {state.status === "error" && (
-        <p className="empty error">Unable to load {repo} ({state.message}). Check the name and your connection, then open it again.</p>
+        <div className="empty error">
+          <span className="empty-icon" aria-hidden="true">!</span>
+          <p className="empty-title">Can't load {repo}</p>
+          <p>Check the repo name and your connection, then try again. ({state.message})</p>
+          <button className="btn primary" type="button" onClick={() => loadRepo(repo)}>Try again</button>
+        </div>
       )}
 
       {state.status === "ready" && (
@@ -94,7 +106,11 @@ export function Library({ defaultRepo }) {
             </div>
           )}
           {shown.length === 0 ? (
-            <p className="empty">Nothing here yet. Press Alt+R on any website with the extension to add the first idea.</p>
+            <div className="empty">
+              <p className="empty-title">Nothing matches #{filter}</p>
+              <p>No idea in this library has that tag or project.</p>
+              <button className="btn outlined" type="button" onClick={() => setFilter("all")}>Show all ideas</button>
+            </div>
           ) : (
             <ul className="grid">
               {shown.map((idea) => (
@@ -170,7 +186,7 @@ function IdeaTray({ repo, idea, onClose }) {
             <button className="btn primary" type="button" onClick={copy}>
               <MorphText text={copied ? "Copied" : "Copy prompt for your agent"} />
             </button>
-            <a className="btn ghost" href={ideaUrl} target="_blank" rel="noopener">Open on GitHub</a>
+            <a className="btn outlined" href={ideaUrl} target="_blank" rel="noopener">Open on GitHub</a>
           </div>
         </div>
       )}
