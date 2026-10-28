@@ -1,0 +1,13 @@
+{
+  "name": "riff",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Click something you like on any website, say why, and keep it in a GitHub inspiration repo your coding agents can read.",
+  "scripts": {
+    "test": "node --test \"extension/**/*.test.js\"",
+    "test:e2e": "node --test tests/e2e.test.js",
+    "check": "npm test && npm run test:e2e"
+  },
+  "license": "MIT"
+}
