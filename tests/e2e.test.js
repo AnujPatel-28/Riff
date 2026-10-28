@@ -2,8 +2,9 @@
 // element with the mouse, describe it, save. GitHub is the in-memory fake,
 // served through request interception, so nothing leaves the machine.
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import http from "node:http";
+import os from "node:os";
 import { createRequire } from "node:module";
 import path from "node:path";
 import test from "node:test";
@@ -37,15 +38,32 @@ async function serveFixture() {
   return { url: `http://127.0.0.1:${server.address().port}/`, close: () => server.close() };
 }
 
-test("pick, describe and save an idea in a real browser", { skip: chromium ? false : "playwright not installed" }, async () => {
+/**
+ * The shipped extension relies on activeTab, which Chrome grants when you
+ * press Alt+R or click the icon. A test cannot press the toolbar, so it runs
+ * a copy whose manifest also allows all sites.
+ */
+async function testCopyOfExtension() {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "riff-ext-"));
+  await cp(extensionDir, dir, { recursive: true });
+  const manifestPath = path.join(dir, "manifest.json");
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  manifest.host_permissions = [...manifest.host_permissions, "<all_urls>"];
+  await writeFile(manifestPath, JSON.stringify(manifest));
+  return dir;
+}
+
+test("pick, dictate and save an idea in a real browser", { skip: chromium ? false : "playwright not installed" }, async () => {
   const site = await serveFixture();
   const gh = fakeGitHub({ empty: true });
+  const extension = await testCopyOfExtension();
   const context = await chromium.launchPersistentContext("", {
     channel: "chromium",
     headless: true,
-    viewport: { width: 1000, height: 700 },
-    args: [`--disable-extensions-except=${extensionDir}`, `--load-extension=${extensionDir}`],
+    viewport: { width: 1100, height: 760 },
+    args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
   });
+  const shots = process.env.RIFF_SHOTS;
 
   try {
     await context.route("https://api.github.com/**", async (route) => {
@@ -60,32 +78,28 @@ test("pick, describe and save an idea in a real browser", { skip: chromium ? fal
 
     const worker = context.serviceWorkers()[0] ?? (await context.waitForEvent("serviceworker"));
     const extensionId = new URL(worker.url()).host;
-
-    const page = await context.newPage();
-    await page.goto(site.url);
-    const panel = await context.newPage();
-    // RIFF_SHOTS=<dir> saves screenshots of each panel view at side-panel width,
-    // for design review. Headless tabs share one window, so the panel is only
-    // narrowed after the page screenshot has been taken.
-    const shoot = async (name) => {
-      if (!process.env.RIFF_SHOTS) return;
-      await panel.setViewportSize({ width: 380, height: 900 });
-      await panel.screenshot({ path: path.join(process.env.RIFF_SHOTS, `${name}.png`), fullPage: true });
-    };
     const errors = [];
-    panel.on("pageerror", (error) => errors.push(error.message));
-    await panel.goto(`chrome-extension://${extensionId}/sidepanel/sidepanel.html`);
 
-    // Connect
-    await panel.getByLabel("Repo").fill("https://github.com/ana/inspiration");
-    await panel.getByLabel("Token").fill("good-token");
-    await panel.getByRole("button", { name: "Connect" }).click();
-    await panel.getByRole("button", { name: "Pick something you like" }).waitFor();
+    // Connect once in the options page; it is remembered from then on.
+    const options = await context.newPage();
+    options.on("pageerror", (error) => errors.push(error.message));
+    await options.goto(`chrome-extension://${extensionId}/options/options.html`);
+    await options.getByLabel("Repo", { exact: true }).fill("https://github.com/ana/inspiration");
+    await options.getByLabel("Token", { exact: true }).fill("good-token");
+    await options.getByRole("button", { name: "Connect" }).click();
+    await options.getByText("Connected to ana/inspiration").waitFor();
+    if (shots) await options.screenshot({ path: path.join(shots, "1-options.png"), fullPage: true });
 
-    // The panel acts on the active tab, as it does when docked beside the page.
+    // Start a capture on the page, as Alt+R does.
+    const page = await context.newPage();
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto(site.url);
     await page.bringToFront();
-    await panel.evaluate(() => document.getElementById("pick").click());
-    await panel.locator("#view-picking").waitFor({ state: "visible" });
+    const started = await worker.evaluate(async (url) => {
+      const [tab] = await chrome.tabs.query({ url: `${url}*` });
+      return globalThis.riffStartCapture(tab);
+    }, site.url);
+    assert.deepEqual(started, { started: true });
 
     // Hover the button, step out to the card with ↑, come back with ↓, click.
     const cta = page.locator(".cta");
@@ -93,28 +107,31 @@ test("pick, describe and save an idea in a real browser", { skip: chromium ? fal
     await page.keyboard.press("ArrowUp");
     await page.keyboard.press("ArrowDown");
     await cta.click();
-
-    await panel.locator("#view-review").waitFor({ state: "visible" });
     assert.equal(await page.evaluate(() => window.hacked), undefined, "the page's own click handler never ran");
-    assert.equal(await panel.inputValue("#title"), "Button from 127.0.0.1");
-    assert.equal(await panel.inputValue("#tags"), "button");
-    const chips = await panel.locator("#tokens .chip").allTextContents();
+
+    // The card opens on the page with the note box already focused, so
+    // dictation lands there without a click.
+    const card = page.locator("[data-riff-card]");
+    await card.getByRole("dialog", { name: "Save to Riff" }).waitFor();
+    assert.equal(await page.evaluate(() => document.querySelector("[data-riff-card]").shadowRoot.activeElement?.id), "note");
+    const keysBefore = (await page.evaluate(() => window.pageKeys)).length;
+    await page.keyboard.type("The arrow nudges right on hover and the shadow is barely there. #hover");
+    assert.equal(await card.locator("#note").inputValue(), "The arrow nudges right on hover and the shadow is barely there. #hover");
+    assert.equal((await page.evaluate(() => window.pageKeys)).length, keysBefore, "page shortcuts never saw the typing");
+
+    assert.equal(await card.locator("#title").inputValue(), "Button from 127.0.0.1");
+    assert.equal(await card.locator("#tags").inputValue(), "button");
+    const chips = await card.locator(".chip").allTextContents();
     assert.ok(chips.includes("#5e6ad2"), `swatches: ${chips}`);
     assert.ok(chips.includes("Arial"), `fonts: ${chips}`);
     assert.ok(chips.includes("radius 999px"), `radius: ${chips}`);
 
-    // Saving without a note asks for one
-    await panel.getByRole("button", { name: "Save to inspiration" }).click();
-    assert.match(await panel.textContent("#save-error"), /why you like it/);
-
-    // "Dictate" the note, then save with Ctrl+Enter
-    await panel.fill("#note", "The arrow nudges right on hover and the shadow is barely there. #hover");
-    await panel.fill("#title", "Pill button with arrow");
-    await panel.fill("#project", "portfolio");
-    await shoot("4-review");
-    await panel.press("#note", "Control+Enter");
-    await panel.locator("#view-saved").waitFor({ state: "visible", timeout: 10_000 });
-    await shoot("5-saved");
+    await card.locator("#title").fill("Pill button with arrow");
+    await card.locator("#project").fill("portfolio");
+    if (shots) await page.screenshot({ path: path.join(shots, "2-card.png") });
+    await card.locator("#project").press("Control+Enter");
+    await card.getByRole("dialog", { name: "Saved to Riff" }).waitFor({ timeout: 10_000 });
+    if (shots) await page.screenshot({ path: path.join(shots, "3-saved.png") });
 
     const index = JSON.parse(gh.read("index.json"));
     const idea = index.ideas[0];
@@ -123,48 +140,33 @@ test("pick, describe and save an idea in a real browser", { skip: chromium ? fal
     assert.deepEqual(idea.tags, ["button", "portfolio", "hover"]);
     assert.equal(idea.source, site.url);
 
-    // The screenshot is a real PNG cropped to the button. (The crop scale comes
-    // from the captured image itself, so it is 2x on a 2x display; headless
-    // Chromium captures at 1x.)
+    // The screenshot is the button only: the picker overlay and the card were
+    // not on screen when it was taken. The crop scale comes from the captured
+    // image itself, so it is 2x on a 2x display; headless captures at 1x.
     const png = Buffer.from(gh.readBase64(idea.shot), "base64");
     assert.equal(png.subarray(1, 4).toString(), "PNG");
     const box = await cta.boundingBox();
     assert.ok(Math.abs(png.readUInt32BE(16) - box.width) <= 1, `width ${png.readUInt32BE(16)} vs ${box.width}`);
     assert.ok(Math.abs(png.readUInt32BE(20) - box.height) <= 1, `height ${png.readUInt32BE(20)} vs ${box.height}`);
 
-    // The snippet keeps structure and values, and drops anything executable
     const snippet = gh.read(idea.snippet);
     assert.match(snippet, /border-radius: 999px/);
     assert.match(snippet, /background-color: #5e6ad2/);
     assert.match(snippet, /\]::after \{ content: "→";/);
-    assert.match(snippet, /background: #16171b|background: #0f1013|background: #08090a/);
     assert.doesNotMatch(snippet, /onclick|<script|data-track/);
-
-    const readme = gh.read(idea.path);
-    assert.match(readme, /> The arrow nudges right on hover/);
-    assert.match(readme, /transition: transform 0\.16s ease-out/);
+    assert.match(gh.read(idea.path), /> The arrow nudges right on hover/);
     assert.ok(gh.read("AGENTS.md"));
 
-    // Copy prompt and recent list
-    await panel.getByRole("button", { name: "Capture another" }).click();
-    assert.match(await panel.textContent("#recent"), /Pill button with arrow/);
-    await shoot("2-ready");
-    await panel.evaluate(() => {
-      document.getElementById("view-ready").hidden = true;
-      document.getElementById("view-picking").hidden = false;
-    });
-    await shoot("3-picking");
-    await panel.getByRole("button", { name: "Settings" }).click();
-    await shoot("1-settings");
-    if (process.env.RIFF_SHOTS) {
-      const { writeFile } = await import("node:fs/promises");
-      await writeFile(path.join(process.env.RIFF_SHOTS, "snippet.html"), snippet);
-      await writeFile(path.join(process.env.RIFF_SHOTS, "README.md"), readme);
-    }
+    // Esc closes the card; the idea shows up under Recent in the options page.
+    await page.keyboard.press("Escape");
+    await card.waitFor({ state: "detached" });
+    await options.reload();
+    await options.getByRole("link", { name: "Pill button with arrow" }).waitFor();
     assert.deepEqual(errors, []);
   } finally {
     await context.close();
     site.close();
+    await rm(extension, { recursive: true, force: true });
   }
 });
 

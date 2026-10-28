@@ -115,3 +115,10 @@ button:disabled { opacity: 0.55; cursor: default; }
 
 .done { padding: 1rem; border: 1px solid var(--line); border-inline-start: 4px solid var(--ok); border-radius: var(--radius); background: var(--surface); }
 .done-title { margin: 0 0 0.25rem; color: var(--ink); font-weight: 600; }
+
+/* options page */
+main { max-width: 40rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+.panel { margin-bottom: 1rem; padding: 1rem 1.125rem; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.panel h2 { margin-bottom: 0.5rem; }
+.status { margin: 0 0 0.25rem; color: var(--ink); font-weight: 600; }
+.status:empty { display: none; }

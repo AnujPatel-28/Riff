@@ -19,5 +19,11 @@
     <a href="javascript:alert(1)">bad link</a>
     <script>window.inlineScriptRan = true;</script>
   </section>
+  <script>
+    // A site keyboard shortcut, like GitHub's "s" for search: it must never
+    // see keys typed into Riff's card.
+    window.pageKeys = [];
+    document.addEventListener("keydown", (event) => window.pageKeys.push(event.key));
+  </script>
 </body>
 </html>

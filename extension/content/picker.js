@@ -1,5 +1,6 @@
-// Element picker. Injected on demand by the side panel together with
-// lib/extract.js; answers with a "riff:picked" or "riff:cancelled" message.
+// Element picker. Injected on demand (Alt+R or the toolbar icon) with
+// lib/extract.js and content/card.js; after a pick it asks the background
+// worker for the screenshot, then opens the floating card.
 (() => {
   if (globalThis.RiffPicker) return;
 
@@ -70,21 +71,20 @@
 
     const finish = (picked) => {
       stop();
-      if (!picked) {
-        chrome.runtime.sendMessage({ type: "riff:cancelled" });
-        return;
-      }
-      // Let the overlay leave the screen before the side panel takes the screenshot.
+      if (!picked) return;
+      // Let the overlay leave the screen before the background takes the screenshot.
       requestAnimationFrame(() =>
-        requestAnimationFrame(() => {
+        requestAnimationFrame(async () => {
           let data;
+          let answer;
           try {
             data = globalThis.RiffExtract.capture(picked);
+            answer = await chrome.runtime.sendMessage({ type: "riff:picked", data });
           } catch (error) {
-            chrome.runtime.sendMessage({ type: "riff:error", message: String(error?.message || error) });
-            return;
+            answer = { ok: false, error: `Unable to read that element: ${error?.message || error}` };
           }
-          chrome.runtime.sendMessage({ type: "riff:picked", data });
+          if (answer?.ok) globalThis.RiffCard.show(data, answer);
+          else globalThis.RiffCard.showError(answer?.error || "Unable to capture that element. Try again.");
         }),
       );
     };

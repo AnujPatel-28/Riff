@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Riff settings</title>
+<link rel="stylesheet" href="options.css">
+<script type="module" src="options.js"></script>
+</head>
+<body>
+<main>
+  <header class="top">
+    <h1 class="brand"><img src="../icons/32.png" alt="" width="20" height="20">Riff</h1>
+  </header>
+
+  <section class="panel" aria-labelledby="how-title">
+    <h2 id="how-title">How to capture</h2>
+    <ol class="steps">
+      <li>On any website, press <kbd id="shortcut">Alt+R</kbd> or click the Riff icon.</li>
+      <li>Click the element you like. <kbd>↑</kbd> picks the bigger container, <kbd>↓</kbd> goes back, <kbd>Esc</kbd> cancels.</li>
+      <li>Hold your Wispr key and say why you like it, then press <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</li>
+    </ol>
+    <p class="help">Change the shortcut at <code>chrome://extensions/shortcuts</code>.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="repo-title">
+    <h2 id="repo-title">Your inspiration repo</h2>
+    <p class="status" id="connected" role="status"></p>
+    <form id="setup-form" novalidate>
+      <label for="setup-repo">Repo</label>
+      <input id="setup-repo" name="repo" autocomplete="off" spellcheck="false" placeholder="your-name/inspiration" required>
+      <label for="setup-token">Token</label>
+      <p class="help" id="token-help">A <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">fine-grained token</a> for that repo only: <b>Repository access → Only select repositories</b>, then <b>Contents: Read and write</b>. Stored only in this browser, sent only to api.github.com.</p>
+      <input id="setup-token" name="token" type="password" autocomplete="off" spellcheck="false" aria-describedby="token-help" placeholder="github_pat_…">
+      <p class="error" id="setup-error" role="status"></p>
+      <div class="actions">
+        <button class="primary" type="submit" id="setup-submit">Connect</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="recent-title">
+    <h2 id="recent-title">Recent ideas</h2>
+    <ul class="recent" id="recent"></ul>
+  </section>
+</main>
+</body>
+</html>

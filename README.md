@@ -8,10 +8,11 @@ can't see any of it, so you explain it again every time.
 
 Riff is a Chrome extension:
 
-1. Press **Alt+R** to open Riff in the side panel, and click **Pick something you like**.
-2. Hover the page and click the element. **↑** picks the bigger container, **↓** goes back.
-3. Hold your **Wispr Flow** key and say why you like it. Add `#tags` if you want.
-4. Press **Ctrl+Enter**. Riff commits the idea to your `inspiration` repo.
+1. On any website, press **Alt+R** (or click the Riff icon).
+2. Hover the page and click the element. **↑** picks the bigger container, **↓** goes back, **Esc** cancels.
+3. A card opens on the page with the note box already focused: hold your **Wispr Flow** key and say why
+   you like it. Add `#tags` if you want. The page keeps its full width.
+4. Press **Ctrl+Enter**. Riff commits the idea to your `inspiration` repo. No PR, nothing to merge.
 
 Each idea lands as plain files any agent can read:
 
@@ -27,7 +28,7 @@ inspiration/
 ```
 
 Then tell your agent: *"Use the pill button idea from my inspiration repo for the contact link."*
-**Copy prompt for your agent** in the panel writes that prompt for you.
+**Copy prompt for your agent** on the card writes that prompt for you.
 
 No AI API, no account, no server: Riff reads values from the page itself, Wispr turns your voice into
 the note, and your own agent does the building.
@@ -39,19 +40,23 @@ the note, and your own agent does the building.
 3. Create an empty GitHub repo, e.g. `inspiration`.
 4. Create a [fine-grained token](https://github.com/settings/personal-access-tokens/new) for **only that repo**
    with **Contents: Read and write**.
-5. Press **Alt+R** (or click the Riff icon), paste the repo and the token, and click **Connect**.
+5. Press **Alt+R** (or click the Riff icon). The first time, Riff opens its settings: paste the repo and
+   the token and click **Connect**. That's remembered; change it any time in Riff's options
+   (right-click the icon → **Options**).
 
-The token stays in this browser's extension storage and is only ever sent to `api.github.com`.
+The token stays in this browser's extension storage, is used only by the extension's background worker
+(never by the page you're on), and is only ever sent to `api.github.com`.
 
 ## Permissions, and why
 
 | Permission | Why |
 | --- | --- |
-| Read and change data on all websites | to show the picker and read the element you click, on whatever site you're on |
-| Side panel, storage | the panel, and your repo name, token, projects and recent ideas |
+| Active tab | only the tab you're on, and only when you press Alt+R or click the icon: show the picker, read the element, take the screenshot |
+| Scripting | inject the picker and the card into that tab |
+| Storage | your repo name, token, projects and recent ideas |
 | `api.github.com` | committing ideas to your repo |
 
-Riff injects nothing until you click **Pick**, and the picker removes itself when you're done.
+Riff can't see any site until you press Alt+R there, and it removes itself when you close the card.
 
 ## What gets captured
 
@@ -70,7 +75,7 @@ code; don't ship their code or assets. `AGENTS.md` tells agents the same.
 npm test           # format, GitHub client and save logic, against an in-memory GitHub
 npm run test:e2e   # real Chromium: load the extension, pick with the mouse, save (needs Playwright)
 npm run check      # both
-RIFF_SHOTS=./shots npm run test:e2e   # also screenshots every panel view
+RIFF_SHOTS=./shots npm run test:e2e   # also screenshots the options page and the card
 ```
 
 Built for [No Hands: The Wispr Challenge](https://www.wemakedevs.org/wispr), Builders track.

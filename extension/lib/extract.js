@@ -1,4 +1,4 @@
-// Runs inside the page (injected by the side panel, never on its own).
+// Runs inside the page (injected when you start a capture, never on its own).
 // Reads the picked element's real computed styles and builds a cleaned,
 // self-contained snippet. Classic script on purpose: content scripts injected
 // with chrome.scripting cannot be ES modules.
