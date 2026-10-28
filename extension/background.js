@@ -70,6 +70,7 @@ async function onSave(message) {
 
   return {
     ok: true,
+    first: stored.recent.length === 0,
     id: result.idea.id,
     title: result.idea.title,
     ideaUrl: result.ideaUrl,

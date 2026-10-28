@@ -119,6 +119,10 @@ test("pick, dictate and save an idea in a real browser", { skip: chromium ? fals
     assert.equal(await card.locator("#note").inputValue(), "The arrow nudges right on hover and the shadow is barely there. #hover");
     assert.equal((await page.evaluate(() => window.pageKeys)).length, keysBefore, "page shortcuts never saw the typing");
 
+    // One question up front; the rest is folded but summarised.
+    assert.equal(await card.locator("#title").isVisible(), false, "details start folded");
+    assert.match(await card.locator("summary").textContent(), /Button from 127\.0\.0\.1 · #button/);
+    await card.locator("summary").click();
     assert.equal(await card.locator("#title").inputValue(), "Button from 127.0.0.1");
     assert.equal(await card.locator("#tags").inputValue(), "button");
     const chips = await card.locator(".chip").allTextContents();
@@ -131,6 +135,11 @@ test("pick, dictate and save an idea in a real browser", { skip: chromium ? fals
     if (shots) await page.screenshot({ path: path.join(shots, "2-card.png") });
     await card.locator("#project").press("Control+Enter");
     await card.getByRole("dialog", { name: "Saved to Riff" }).waitFor({ timeout: 10_000 });
+    // The same card became the saved card, and the first save says so.
+    assert.equal(await card.locator("section.card").count(), 1);
+    assert.equal(await card.locator(".saved-head img").count(), 1);
+    assert.match(await card.locator(".born").textContent(), /inspiration library is born/);
+    await page.waitForTimeout(500);
     if (shots) await page.screenshot({ path: path.join(shots, "3-saved.png") });
 
     const index = JSON.parse(gh.read("index.json"));

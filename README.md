@@ -33,6 +33,22 @@ Then tell your agent: *"Use the pill button idea from my inspiration repo for th
 No AI API, no account, no server: Riff reads values from the page itself, Wispr turns your voice into
 the note, and your own agent does the building.
 
+## Riff Studio (the live demo)
+
+`web/` is Riff Studio: the whole flow in the browser, with nothing to install. Pick something on **Lumen**
+(a made-up site we designed to pick from), say why, and see exactly the files the extension would commit:
+the idea note, a live snippet preview, and the agent prompt. **Library** shows any public inspiration repo
+(`?repo=owner/name`), and **Connect GitHub** lets Studio save to your real repo with the same code as the extension.
+
+Studio imports the extension's own `lib/` (extract, format, GitHub save), so the demo and the extension can't drift apart.
+
+```bash
+cd web && npm ci && npm run dev    # http://localhost:5173
+```
+
+**Deploy:** import the repo in [Vercel](https://vercel.com/new). `vercel.json` already sets the install,
+build and output folder, so there's nothing to configure.
+
 ## Install (developer mode)
 
 1. Clone this repo.

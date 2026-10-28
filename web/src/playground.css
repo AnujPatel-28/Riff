@@ -1,0 +1,94 @@
+/* The demo site. Self-contained and deliberately its own style, so what you
+   capture looks like it came from a real product, not from Riff. */
+.lumen {
+  --l-bg: #0d0f14;
+  --l-surface: #151821;
+  --l-line: #262a36;
+  --l-ink: #f4f1ea;
+  --l-body: #b9b4aa;
+  --l-accent: #f2a65a;
+  --l-accent-2: #e0607e;
+  position: relative;
+  padding: 0 28px 32px;
+  background:
+    radial-gradient(60% 50% at 80% 0%, rgb(242 166 90 / 0.14), transparent 70%),
+    radial-gradient(50% 40% at 0% 30%, rgb(224 96 126 / 0.1), transparent 70%),
+    var(--l-bg);
+  color: var(--l-body);
+  font: 400 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  border-radius: 0 0 14px 14px;
+  overflow: hidden;
+}
+.lumen a { color: inherit; text-decoration: none; }
+
+.lumen-nav {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; gap: 24px;
+  margin: 0 -28px; padding: 14px 28px;
+  background: rgb(13 15 20 / 0.6);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+}
+.lumen-logo { display: inline-flex; align-items: center; gap: 8px; color: var(--l-ink); font-weight: 650; letter-spacing: -0.01em; }
+.lumen-dot { width: 12px; height: 12px; border-radius: 50%; background: conic-gradient(from 200deg, var(--l-accent), var(--l-accent-2), var(--l-accent)); }
+.lumen-links { display: flex; gap: 18px; margin-inline-start: 8px; font-size: 14px; }
+.lumen-links a { color: #8d887f; transition: color 150ms ease-out; }
+.lumen-links a:hover { color: var(--l-ink); }
+.lumen-ghost { margin-inline-start: auto; font-size: 14px; color: var(--l-ink); }
+
+.lumen-hero { padding: 48px 0 32px; max-width: 34rem; }
+.lumen-eyebrow { margin: 0 0 10px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--l-accent); }
+.lumen-headline {
+  margin: 0; color: var(--l-ink);
+  font: 500 44px/1.06 Georgia, "Times New Roman", serif; letter-spacing: -0.02em;
+}
+.lumen-headline em {
+  font-style: italic;
+  background: linear-gradient(90deg, var(--l-accent), var(--l-accent-2));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.lumen-lead { margin: 14px 0 22px; max-width: 30rem; }
+.lumen-actions { display: flex; align-items: center; gap: 14px; }
+
+.lumen-cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 999px;
+  background: var(--l-ink); color: #15110c !important; font-weight: 600; font-size: 14px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6), 0 6px 20px rgb(242 166 90 / 0.18);
+}
+.lumen-cta::after { content: "→"; transition: translate 200ms cubic-bezier(0.25, 1, 0.5, 1); }
+.lumen-cta:hover::after { translate: 3px 0; }
+.lumen-note { font-size: 13px; color: #8d887f; }
+
+.lumen-pricing { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; max-width: 34rem; }
+.lumen-plan {
+  position: relative; padding: 18px; border-radius: 14px;
+  background: var(--l-surface); border: 1px solid var(--l-line);
+}
+.lumen-plan--featured {
+  border-color: rgb(242 166 90 / 0.45);
+  background: linear-gradient(180deg, rgb(242 166 90 / 0.08), transparent 60%), var(--l-surface);
+  box-shadow: 0 24px 48px -20px rgb(242 166 90 / 0.35);
+}
+.lumen-badge { position: absolute; top: 14px; right: 14px; margin: 0; padding: 2px 8px; border-radius: 999px; background: rgb(242 166 90 / 0.15); color: var(--l-accent); font-size: 11px; font-weight: 600; }
+.lumen-plan-name { margin: 0; color: var(--l-ink); font-weight: 600; }
+.lumen-price { margin: 6px 0; color: var(--l-ink); font: 500 30px/1.1 Georgia, serif; font-variant-numeric: tabular-nums; }
+.lumen-price span { font: 400 14px ui-sans-serif, system-ui, sans-serif; color: #8d887f; }
+.lumen-plan-text { margin: 0; font-size: 13px; }
+
+.lumen-quote { margin: 20px 0 0; max-width: 34rem; padding: 18px 20px; border-radius: 14px; border: 1px solid var(--l-line); background: rgb(255 255 255 / 0.02); }
+.lumen-quote blockquote { margin: 0 0 10px; color: var(--l-ink); font: italic 400 18px/1.45 Georgia, serif; }
+.lumen-quote figcaption { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.lumen-avatar { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, var(--l-accent), var(--l-accent-2)); color: #15110c; font-size: 11px; font-weight: 700; }
+
+@media (max-width: 34rem) {
+  .lumen { padding: 0 18px 24px; }
+  .lumen-nav { margin: 0 -18px; padding: 12px 18px; gap: 14px; }
+  .lumen-links { display: none; }
+  .lumen-headline { font-size: 34px; }
+  .lumen-pricing { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lumen-cta::after, .lumen-links a { transition: none; }
+}

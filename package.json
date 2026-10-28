@@ -7,7 +7,9 @@
   "scripts": {
     "test": "node --test \"extension/**/*.test.js\"",
     "test:e2e": "node --test tests/e2e.test.js",
-    "check": "npm test && npm run test:e2e"
+    "check": "npm test && npm run test:e2e",
+    "studio": "cd web && npm run dev",
+    "studio:build": "cd web && npm run build"
   },
   "license": "MIT"
 }
