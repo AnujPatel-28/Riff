@@ -56,7 +56,7 @@ export default function App() {
           <span className="pill-note">Built voice-first with Wispr Flow</span>
         </div>
         <SlidingTabs tabs={VIEWS} value={view} onChange={goTo} label="Sections" />
-        <button className="btn ghost small" type="button" onClick={() => setGithubOpen(true)}>
+        <button className="btn outlined small" type="button" onClick={() => setGithubOpen(true)}>
           {github ? `GitHub: ${github.repo}` : "Connect GitHub"}
         </button>
       </header>
@@ -70,7 +70,7 @@ export default function App() {
           )}
           {view === "library" && (
             <TabPanel id="library" direction={direction}>
-              <Library defaultRepo={github?.repo} />
+              <Library defaultRepo={github?.repo} onGetExtension={() => goTo("extension")} />
             </TabPanel>
           )}
           {view === "extension" && (
@@ -233,7 +233,12 @@ function Studio({ github, onConnect }) {
         </div>
       )}
 
-      <SessionLibrary ideas={ideas} onOpen={(idea) => { setResult(idea); setMode("saved"); }} hiddenId={mode === "saved" ? result?.entry.id : null} />
+      <SessionLibrary
+        ideas={ideas}
+        onOpen={(idea) => { setResult(idea); setMode("saved"); }}
+        hiddenId={mode === "saved" ? result?.entry.id : null}
+        onPick={() => setPendingSample(SAMPLES[0])}
+      />
 
       {/* Step 2: one question */}
       <Tray
@@ -314,7 +319,7 @@ function Studio({ github, onConnect }) {
             <button className="btn primary" type="button" onClick={save} disabled={!capture || saving}>
               <MorphText text={saving ? "Saving…" : "Save idea"} />
             </button>
-            <button className="btn ghost" type="button" onClick={() => setMode("picking")}>
+            <button className="btn text" type="button" onClick={() => setMode("picking")}>
               Pick again
             </button>
             <span className="tip">
@@ -385,6 +390,20 @@ function Result({ idea, github, onConnect, onAnother, onUpdate }) {
           <p className="result-title">{idea.entry.title}</p>
           <p className="meta">ideas/{idea.entry.id}/ · {idea.entry.tags.map((t) => `#${t}`).join(" ")}</p>
         </div>
+        <svg className="result-check" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="11" fill="currentColor" opacity="0.16" />
+          <motion.path
+            d="M7 12.5l3.2 3.2L17 9"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.36, delay: 0.15, ease: [0.2, 0, 0, 1] }}
+          />
+        </svg>
       </div>
       <SlidingTabs tabs={tabs} value={tab} onChange={change} label="Idea files" />
       <div className="tab-stage">
@@ -417,21 +436,21 @@ function Result({ idea, github, onConnect, onAnother, onUpdate }) {
           <MorphText text={copied ? "Copied" : "Copy prompt for your agent"} />
         </button>
         {idea.github ? (
-          <a className="btn ghost" href={idea.github} target="_blank" rel="noopener">View on GitHub</a>
+          <a className="btn outlined" href={idea.github} target="_blank" rel="noopener">View on GitHub</a>
         ) : github && idea.capture ? (
-          <button className="btn ghost" type="button" onClick={push} disabled={pushing}>
+          <button className="btn outlined" type="button" onClick={push} disabled={pushing}>
             <MorphText text={pushing ? "Saving to GitHub…" : `Save to ${github.repo}`} />
           </button>
         ) : !github ? (
-          <button className="btn ghost" type="button" onClick={onConnect}>Connect GitHub to keep it</button>
+          <button className="btn outlined" type="button" onClick={onConnect}>Connect GitHub to keep it</button>
         ) : null}
-        <button className="btn ghost" type="button" onClick={onAnother}>Pick another</button>
+        <button className="btn text" type="button" onClick={onAnother}>Pick another</button>
       </div>
     </div>
   );
 }
 
-function SessionLibrary({ ideas, onOpen, hiddenId }) {
+function SessionLibrary({ ideas, onOpen, hiddenId, onPick }) {
   return (
     <section className="session" aria-labelledby="session-title">
       <div className="section-head">
@@ -441,14 +460,16 @@ function SessionLibrary({ ideas, onOpen, hiddenId }) {
       {ideas.length === 0 ? (
         <div className="empty">
           <motion.span
-            className="empty-arrow"
+            className="empty-icon"
             aria-hidden="true"
-            animate={{ y: [0, -6, 0] }}
-            transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ y: [0, -4, 0] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
           >
             ↑
           </motion.span>
-          <p>Your first idea lands here. Pick something in Lumen, or try a sample.</p>
+          <p className="empty-title">No ideas yet</p>
+          <p>Pick something in Lumen above and say why you like it, or start from a ready-made example. It lands here, ready for your agent.</p>
+          <button className="btn outlined" type="button" onClick={onPick}>Try a sample</button>
         </div>
       ) : (
         <ul className="grid">
@@ -521,7 +542,7 @@ function GitHubTray({ open, github, onClose, onChange }) {
             <MorphText text={busy ? "Checking…" : "Connect"} />
           </button>
           {github && (
-            <button className="btn ghost" type="button" onClick={() => { onChange(null, false); onClose(); }}>
+            <button className="btn text" type="button" onClick={() => { onChange(null, false); onClose(); }}>
               Disconnect
             </button>
           )}

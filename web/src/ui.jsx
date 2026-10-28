@@ -3,9 +3,10 @@
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef } from "react";
 
-export const EASE_OUT = [0.25, 1, 0.5, 1]; // directional moves, tab slides
+export const EASE_OUT = [0.2, 0, 0, 1]; // Material 3 standard easing: moves and tab slides
 export const EASE_TEXT = [0.16, 1, 0.3, 1]; // label morphs
-export const SPRING = { type: "spring", stiffness: 420, damping: 36, mass: 0.9 }; // trays, cards
+// Material 3 "spatial, calm" spring: ~0.9 damping ratio, no bounce, for trays and cards.
+export const SPRING = { type: "spring", stiffness: 260, damping: 29, mass: 1 };
 
 /**
  * "Save idea" → "Saving…" → "Saved": the old label slides up and out while
@@ -88,7 +89,7 @@ export function Tray({ open, title, onClose, onBack, children, labelId, initialF
           layout={!reduce}
           initial={reduce ? { opacity: 0 } : { y: "110%" }}
           animate={reduce ? { opacity: 1 } : { y: 0 }}
-          exit={reduce ? { opacity: 0 } : { y: "110%", transition: { duration: 0.2, ease: [0.5, 0, 0.75, 0] } }}
+          exit={reduce ? { opacity: 0 } : { y: "110%", transition: { duration: 0.2, ease: [0.3, 0, 1, 1] } }}
           transition={SPRING}
         >
           <header className="tray-head">
