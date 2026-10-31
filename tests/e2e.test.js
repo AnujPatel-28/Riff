@@ -95,11 +95,30 @@ test("pick, dictate and save an idea in a real browser", { skip: chromium ? fals
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(site.url);
     await page.bringToFront();
-    const started = await worker.evaluate(async (url) => {
+
+    // What an extension reload leaves behind: an old copy of Riff in the page
+    // whose start does nothing. Riff must replace it, not trust it.
+    await worker.evaluate(async (url) => {
       const [tab] = await chrome.tabs.query({ url: `${url}*` });
-      return globalThis.riffStartCapture(tab);
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          globalThis.RiffPicker = { start() {}, stop() { throw new Error("Extension context invalidated."); } };
+          globalThis.RiffCard = { close() { throw new Error("Extension context invalidated."); } };
+        },
+      });
     }, site.url);
-    assert.deepEqual(started, { started: true });
+
+    const startCapture = () =>
+      worker.evaluate(async (url) => {
+        const [tab] = await chrome.tabs.query({ url: `${url}*` });
+        return globalThis.riffStartCapture(tab);
+      }, site.url);
+    assert.deepEqual(await startCapture(), { started: true });
+    await page.locator("[data-riff-overlay]").waitFor({ state: "attached", timeout: 3000 });
+    // Pressing Alt+R again replaces the picker instead of stacking a second one.
+    assert.deepEqual(await startCapture(), { started: true });
+    assert.equal(await page.locator("[data-riff-overlay]").count(), 1);
 
     // Hover the button, step out to the card with ↑, come back with ↓, click.
     const cta = page.locator(".cta");

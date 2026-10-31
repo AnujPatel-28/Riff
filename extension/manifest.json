@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Riff: inspiration library",
   "short_name": "Riff",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Click something you like on any website, say why, and Riff saves it with its real design values to your own GitHub inspiration repo.",
   "minimum_chrome_version": "116",
   "action": {
@@ -26,7 +26,8 @@
   "permissions": [
     "scripting",
     "storage",
-    "activeTab"
+    "activeTab",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://api.github.com/*"

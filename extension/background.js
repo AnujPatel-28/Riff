@@ -7,6 +7,24 @@ import { saveIdea } from "./lib/save.js";
 import { cropScreenshot } from "./lib/shot.js";
 
 const RECENT_LIMIT = 20;
+
+// The first version of Riff opened a side panel on click, and Chrome
+// remembers that setting across updates; while it is on, clicking the icon
+// or pressing Alt+R opens nothing. Turn it off on every start.
+function resetPanelBehavior() {
+  chrome.sidePanel?.setPanelBehavior?.({ openPanelOnActionClick: false }).catch(() => {});
+}
+chrome.runtime.onInstalled.addListener(resetPanelBehavior);
+chrome.runtime.onStartup.addListener(resetPanelBehavior);
+resetPanelBehavior();
+
+/** Makes a failure visible: a red "!" on the icon, its tooltip, and the options page. */
+async function report(tabId, message) {
+  await chrome.action.setBadgeBackgroundColor({ color: "#d93025" }).catch(() => {});
+  await chrome.action.setBadgeText({ tabId, text: "!" }).catch(() => {});
+  await chrome.action.setTitle({ tabId, title: `Riff: ${message}` }).catch(() => {});
+  await chrome.storage.local.set({ lastError: { message, at: new Date().toISOString() } }).catch(() => {});
+}
 const SCRIPTS = ["lib/extract.js", "content/picker.js", "content/card.js"];
 
 async function settings() {
@@ -29,13 +47,17 @@ async function startCapture(tab) {
     return { started: false, reason: "blocked-page" };
   }
   await chrome.action.setBadgeText({ tabId: tab.id, text: "" }).catch(() => {});
+  await chrome.action.setTitle({ tabId: tab.id, title: "Riff: pick something you like (Alt+R)" }).catch(() => {});
+  // Inject fresh copies every time, then start the picker directly in the
+  // page instead of by message, so a copy left over from before a reload can
+  // never swallow the start.
   await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: SCRIPTS });
-  await chrome.tabs.sendMessage(tab.id, { type: "riff:start" });
+  await chrome.scripting.executeScript({ target: { tabId: tab.id }, func: () => globalThis.RiffPicker.start() });
   return { started: true };
 }
 
 chrome.action.onClicked.addListener((tab) => {
-  startCapture(tab).catch((error) => console.warn("Riff: unable to start", error));
+  startCapture(tab).catch((error) => report(tab?.id, `couldn't start on this page (${error?.message || error}). Reload the page and press Alt+R again.`));
 });
 
 // Lets the end-to-end test start a capture the way the toolbar icon does.
@@ -66,7 +88,7 @@ async function onSave(message) {
     { id: result.idea.id, title: result.idea.title, url: result.ideaUrl, site: result.idea.site, project: result.idea.project, captured: result.idea.captured },
     ...stored.recent,
   ].slice(0, RECENT_LIMIT);
-  await chrome.storage.local.set({ projects, lastProject: project, recent });
+  await chrome.storage.local.set({ projects, lastProject: project, recent, lastError: null });
 
   return {
     ok: true,
@@ -90,6 +112,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!handler) return false;
   handler(message, sender)
     .then(sendResponse)
-    .catch((error) => sendResponse({ ok: false, error: describeError(error) }));
+    .catch((error) => {
+      const text = describeError(error);
+      report(sender.tab?.id, text);
+      sendResponse({ ok: false, error: text });
+    });
   return true; // keep the channel open for the async answer
 });
