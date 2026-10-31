@@ -2,7 +2,13 @@
 // focused at once so Wispr Flow types straight into it, and the page keeps
 // its full width. Saving happens in the background worker.
 (() => {
-  if (globalThis.RiffCard) return;
+  // Always install fresh, closing a card left by an older copy of Riff.
+  try {
+    globalThis.RiffCard?.close();
+  } catch {
+    // an orphaned copy may throw; it is being replaced either way
+  }
+  for (const stale of document.querySelectorAll("[data-riff-card], [data-riff-overlay]")) stale.remove();
 
   let current = null;
 

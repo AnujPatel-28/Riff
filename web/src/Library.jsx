@@ -26,7 +26,16 @@ export function Library({ defaultRepo, onGetExtension }) {
   const loadRepo = useCallback(async (name) => {
     setState({ status: "loading", ideas: [] });
     try {
-      const response = await fetch(raw(name, "index.json"), { cache: "no-store" });
+      // The API serves the index as committed right now; raw.githubusercontent
+      // caches it for 5 minutes, so a just-saved idea looked missing. Raw stays
+      // as the fallback when the API's hourly limit runs out.
+      let response = await fetch(`https://api.github.com/repos/${name}/contents/index.json`, {
+        headers: { Accept: "application/vnd.github.raw+json" },
+        cache: "no-store",
+      }).catch(() => null);
+      if (!response || (response.status !== 200 && response.status !== 404)) {
+        response = await fetch(raw(name, "index.json"), { cache: "no-store" });
+      }
       if (response.status === 404) return setState({ status: "missing", ideas: [] });
       if (!response.ok) throw new Error(`GitHub answered ${response.status}`);
       const index = await response.json();

@@ -3,7 +3,7 @@
 // self-contained snippet. Classic script on purpose: content scripts injected
 // with chrome.scripting cannot be ES modules.
 (() => {
-  if (globalThis.RiffExtract) return;
+  // Re-defined on every capture: cheap, and never stale after a reload.
 
   const MAX_NODES = 400;
   const MAX_SNIPPET_CHARS = 300_000;

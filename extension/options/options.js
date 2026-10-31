@@ -3,7 +3,7 @@ import { InspirationRepo, parseRepo } from "../lib/github.js";
 const $ = (id) => document.getElementById(id);
 
 async function load() {
-  return chrome.storage.local.get({ repo: "", token: "", recent: [] });
+  return chrome.storage.local.get({ repo: "", token: "", recent: [], lastError: null });
 }
 
 function describeError(error) {
@@ -11,7 +11,9 @@ function describeError(error) {
 }
 
 async function render() {
-  const { repo, token, recent } = await load();
+  const { repo, token, recent, lastError } = await load();
+  $("problem").hidden = !lastError;
+  if (lastError) $("problem-text").textContent = `${lastError.message} (${new Date(lastError.at).toLocaleString()})`;
   $("setup-repo").value = repo;
   $("setup-token").value = "";
   $("setup-token").placeholder = token ? "Saved. Paste a new one only to replace it." : "github_pat_…";

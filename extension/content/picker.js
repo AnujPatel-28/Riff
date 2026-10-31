@@ -2,7 +2,14 @@
 // lib/extract.js and content/card.js; after a pick it asks the background
 // worker for the screenshot, then opens the floating card.
 (() => {
-  if (globalThis.RiffPicker) return;
+  // Always install fresh. After the extension is reloaded, a copy injected
+  // earlier can still sit in this page with a dead connection to Riff; shut
+  // it down and replace it instead of trusting it.
+  try {
+    globalThis.RiffPicker?.stop();
+  } catch {
+    // an orphaned copy may throw; it is being replaced either way
+  }
 
   const Z = "2147483647";
   let active = null;
@@ -148,11 +155,6 @@
     active?.stop();
     active = null;
   }
-
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message?.type === "riff:start") start();
-    if (message?.type === "riff:stop") stop();
-  });
 
   globalThis.RiffPicker = { start, stop };
 })();
